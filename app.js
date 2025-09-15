@@ -1,9 +1,9 @@
-// Importa SDK do Firebase (usando módulos ES6 diretos da CDN do Firebase)
+// Importa SDK do Firebase
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, collection, query, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// Configuração Firebase (a mesma que você já criou)
+// Configuração Firebase
 const firebaseConfig = {
   apiKey: "AIzaSyD-yt8AmgRkMnJH9xKwDSKn9_X42Cmpq7Y",
   authDomain: "robo-aviator2025.firebaseapp.com",
@@ -25,9 +25,10 @@ const dashboard = document.getElementById("dashboard");
 const callList = document.getElementById("callList");
 const stats = document.getElementById("stats");
 
-// Login anônimo
+// 🔑 Login Google (melhor que anônimo para identificar usuário)
 window.login = () => {
-  signInAnonymously(auth).catch(err => console.error("Erro no login:", err));
+  const provider = new GoogleAuthProvider();
+  signInWithPopup(auth, provider).catch(err => console.error("Erro no login:", err));
 };
 
 // Logout
@@ -35,12 +36,34 @@ window.logout = () => {
   signOut(auth);
 };
 
-// Monitora login
-onAuthStateChanged(auth, (user) => {
+// Monitora login e checa assinatura
+onAuthStateChanged(auth, async (user) => {
   if (user) {
-    loginScreen.classList.add("hidden");
-    dashboard.classList.remove("hidden");
-    carregarCalls();
+    console.log("Logado:", user.email);
+
+    // Verifica assinatura no Firestore
+    const ref = doc(db, "assinaturas", user.uid);
+    const snap = await getDoc(ref);
+
+    if (snap.exists()) {
+      const dados = snap.data();
+      const hoje = new Date();
+
+      if (dados.status === "ativo" && dados.validade.toDate() > hoje) {
+        console.log("✅ Assinatura válida, liberando acesso...");
+        loginScreen.classList.add("hidden");
+        dashboard.classList.remove("hidden");
+        carregarCalls();
+      } else {
+        alert("⚠️ Sua assinatura expirou ou está pendente.");
+        loginScreen.classList.remove("hidden");
+        dashboard.classList.add("hidden");
+      }
+    } else {
+      alert("⚠️ Nenhuma assinatura encontrada. Faça o pagamento.");
+      loginScreen.classList.remove("hidden");
+      dashboard.classList.add("hidden");
+    }
   } else {
     loginScreen.classList.remove("hidden");
     dashboard.classList.add("hidden");
@@ -49,7 +72,7 @@ onAuthStateChanged(auth, (user) => {
 
 // 🔥 Carregar calls em tempo real
 function carregarCalls() {
- const q = query(collection(db, "calls"), orderBy("hora", "desc"), limit(10));
+  const q = query(collection(db, "calls"), orderBy("hora", "desc"), limit(10));
   onSnapshot(q, (snapshot) => {
     callList.innerHTML = "";
     let acertos = 0, erros = 0;
