@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Robô Aviator Premium</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#111">
+</head>
+<body>
+  <!-- Login -->
+  <div id="login" class="screen">
+    <h1>🚀 Robô Aviator Premium</h1>
+    <p>Acesse sua conta para ver as calls</p>
+    <button onclick="login()">Entrar</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="screen hidden">
+    <header>
+      <h2>📊 Dashboard de Calls</h2>
+      <button onclick="logout()">Sair</button>
+    </header>
+
+    <section id="calls">
+      <h3>📢 Últimas Calls</h3>
+      <ul id="callList"></ul>
+    </section>
+
+    <section id="historico">
+      <h3>📈 Histórico</h3>
+      <p id="stats">Taxa de acerto: --%</p>
+    </section>
+  </div>
+
+  <!-- Corrigido para rodar ES6 imports -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
