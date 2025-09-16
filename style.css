@@ -45,6 +45,7 @@ ul {
   list-style: none;
   padding: 0;
 }
+
 /* ===== Botão Assinar ===== */
 .btn-assinar {
   display: inline-block;
@@ -61,3 +62,21 @@ ul {
   background: #27ae60;
 }
 
+/* ===== Botão Jogue Aqui ===== */
+.btn-jogar {
+  display: inline-block;
+  background: linear-gradient(135deg, #ff004c, #ff7b00);
+  color: #fff;
+  padding: 14px 26px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  text-decoration: none;
+  margin-top: 20px;
+  transition: 0.3s;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+.btn-jogar:hover {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, #ff7b00, #ff004c);
+}

@@ -7,23 +7,31 @@
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#111">
-<!-- Ícone -->
+  <!-- Ícone -->
   <link rel="icon" href="icon.png" type="image/png">
 </head>
 <body>
   <!-- Login -->
-<div id="login" class="screen">
-  <h1>🚀 Robô Aviator Premium</h1>
-  <p>Assine para ver as calls em tempo real</p>
+  <div id="login" class="screen">
+    <h1>🚀 Robô Aviator Premium</h1>
+    <p>Assine para ver as calls em tempo real</p>
 
-  <!-- Botão para pagar assinatura -->
-  <a href="https://mpago.la/27kUsuM" target="_blank" class="btn-assinar">
-    💳 Assinar Agora
-  </a>
+    <!-- Botão para pagar assinatura -->
+    <a href="https://mpago.la/27kUsuM" target="_blank" class="btn-assinar">
+      💳 Assinar Agora
+    </a>
 
-  <!-- Botão de login -->
-  <button onclick="login()">Entrar</button>
-</div>
+    <h3>Entrar com Email e Senha</h3>
+    <input type="email" id="email" placeholder="Digite seu email">
+    <input type="password" id="senha" placeholder="Digite sua senha">
+    <button onclick="loginEmail()">Entrar com Email</button>
+
+    <p>ou</p>
+
+    <h3>Entrar com Google</h3>
+    <button onclick="loginGoogle()">Entrar com Google</button>
+  </div>
+
   <!-- Dashboard -->
   <div id="dashboard" class="screen hidden">
     <header>
@@ -40,9 +48,40 @@
       <h3>📈 Histórico</h3>
       <p id="stats">Taxa de acerto: --%</p>
     </section>
+
+    <!-- Botão do jogo -->
+    <section id="jogo">
+      <h3>🎮 Diversão Garantida</h3>
+      <a href="https://goathbet.com/?r=zktgmbwl" target="_blank" class="btn-jogar">
+        🎮 Jogue Aqui
+      </a>
+    </section>
   </div>
 
-  <!-- Corrigido para rodar ES6 imports -->
+  <!-- Área de Admin -->
+  <div id="admin" class="screen hidden">
+    <header>
+      <h2>👑 Painel de Administração</h2>
+      <button onclick="logout()">Sair</button>
+    </header>
+
+    <section>
+      <h3>Gerenciar Assinaturas</h3>
+      <table border="1" width="100%">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Validade</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody id="assinaturasTable"></tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- Scripts -->
   <script type="module" src="app.js"></script>
 </body>
 </html>
