@@ -2,8 +2,10 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { 
   getAuth, 
+  createUserWithEmailAndPassword,
   signInWithEmailAndPassword, 
-  signInWithPopup, 
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider, 
   signOut, 
   onAuthStateChanged 
@@ -16,10 +18,12 @@ import {
   where, 
   getDocs, 
   doc, 
+  setDoc,   // <-- correção: cria documento
   updateDoc, 
   orderBy, 
   limit, 
-  onSnapshot 
+  onSnapshot,
+  Timestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Configuração Firebase
@@ -45,7 +49,31 @@ const adminPanel = document.getElementById("admin");
 const callList = document.getElementById("callList");
 const stats = document.getElementById("stats");
 
-// === LOGIN COM EMAIL E SENHA ===
+// === CADASTRO COM EMAIL/SENHA ===
+window.cadastroEmail = async function () {
+  const email = document.getElementById("email").value;
+  const senha = document.getElementById("senha").value;
+
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
+
+    // Cria um registro inicial no Firestore
+    const validadePadrao = new Date();
+    validadePadrao.setDate(validadePadrao.getDate() + 30); // +30 dias
+
+    await setDoc(doc(db, "assinaturas", userCredential.user.uid), {
+      email: email,
+      status: "INATIVO", // admin vai liberar
+      validade: Timestamp.fromDate(validadePadrao)
+    });
+
+    alert("✅ Conta criada! Aguarde liberação do admin.");
+  } catch (err) {
+    alert("❌ Erro no cadastro: " + err.message);
+  }
+};
+
+// === LOGIN COM EMAIL/SENHA ===
 window.loginEmail = async function () {
   const email = document.getElementById("email").value;
   const senha = document.getElementById("senha").value;
@@ -58,11 +86,16 @@ window.loginEmail = async function () {
   }
 };
 
-// === LOGIN COM GOOGLE ===
+// === LOGIN COM GOOGLE (Redirect para evitar popup) ===
+const provider = new GoogleAuthProvider();
 window.loginGoogle = () => {
-  const provider = new GoogleAuthProvider();
-  signInWithPopup(auth, provider).catch(err => console.error("Erro no login:", err));
+  signInWithRedirect(auth, provider);
 };
+getRedirectResult(auth).then((result) => {
+  if (result?.user) {
+    verificarAcesso(result.user.email);
+  }
+});
 
 // === LOGOUT ===
 window.logout = () => {
@@ -80,14 +113,14 @@ onAuthStateChanged(auth, (user) => {
 
 // === VERIFICAR ACESSO ===
 async function verificarAcesso(email) {
-  // 👑 Se for admin → abre painel admin
-  if (email === "seuemail@admin.com") { // <-- troque pelo seu email de admin
+  // 👑 Admin
+  if (email === "dionegalato1212@gmail.com") { // seu email admin
     carregarAssinaturas();
     showAdmin();
     return;
   }
 
-  // Usuário normal → verificar assinatura
+  // Usuário comum
   const q = query(collection(db, "assinaturas"), where("email", "==", email));
   const snap = await getDocs(q);
 
@@ -118,11 +151,13 @@ async function carregarAssinaturas() {
 
   snapshot.forEach(docSnap => {
     const data = docSnap.data();
+    const validade = data.validade?.toDate ? data.validade.toDate().toLocaleDateString() : "Não definido";
+
     const row = `
       <tr>
         <td>${data.email}</td>
         <td>${data.status}</td>
-        <td>${data.validade || "Não definido"}</td>
+        <td>${validade}</td>
         <td>
           <button onclick="atualizarStatus('${docSnap.id}', 'ATIVO')">Ativar</button>
           <button onclick="atualizarStatus('${docSnap.id}', 'INATIVO')">Inativar</button>
@@ -135,13 +170,20 @@ async function carregarAssinaturas() {
 
 // === ADMIN: ATUALIZAR STATUS ===
 window.atualizarStatus = async function (id, novoStatus) {
+  const validadeNova = new Date();
+  validadeNova.setDate(validadeNova.getDate() + 30); // admin define +30 dias
   const ref = doc(db, "assinaturas", id);
-  await updateDoc(ref, { status: novoStatus });
-  alert(`✅ Usuário atualizado para ${novoStatus}`);
+
+  await updateDoc(ref, { 
+    status: novoStatus, 
+    validade: Timestamp.fromDate(validadeNova) 
+  });
+
+  alert(`✅ Usuário atualizado para ${novoStatus} até ${validadeNova.toLocaleDateString()}`);
   carregarAssinaturas();
 };
 
-// === DASHBOARD: CARREGAR CALLS EM TEMPO REAL ===
+// === DASHBOARD: CALLS ===
 function carregarCalls() {
   const q = query(collection(db, "calls"), orderBy("hora", "desc"), limit(10));
   onSnapshot(q, (snapshot) => {
