@@ -4,9 +4,6 @@ import {
   getAuth, 
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword, 
-  signInWithRedirect,
-  getRedirectResult,
-  GoogleAuthProvider, 
   signOut, 
   onAuthStateChanged 
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -18,7 +15,7 @@ import {
   where, 
   getDocs, 
   doc, 
-  setDoc,   // <-- correção: cria documento
+  setDoc,   
   updateDoc, 
   orderBy, 
   limit, 
@@ -42,13 +39,6 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-// Elementos da interface
-const loginScreen = document.getElementById("login");
-const dashboard = document.getElementById("dashboard");
-const adminPanel = document.getElementById("admin");
-const callList = document.getElementById("callList");
-const stats = document.getElementById("stats");
-
 // === CADASTRO COM EMAIL/SENHA ===
 window.cadastroEmail = async function () {
   const email = document.getElementById("email").value;
@@ -57,13 +47,13 @@ window.cadastroEmail = async function () {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, senha);
 
-    // Cria um registro inicial no Firestore
+    // Cria documento em "assinaturas"
     const validadePadrao = new Date();
-    validadePadrao.setDate(validadePadrao.getDate() + 30); // +30 dias
+    validadePadrao.setDate(validadePadrao.getDate() + 30);
 
     await setDoc(doc(db, "assinaturas", userCredential.user.uid), {
       email: email,
-      status: "INATIVO", // admin vai liberar
+      status: "INATIVO",
       validade: Timestamp.fromDate(validadePadrao)
     });
 
@@ -86,17 +76,6 @@ window.loginEmail = async function () {
   }
 };
 
-// === LOGIN COM GOOGLE (Redirect para evitar popup) ===
-const provider = new GoogleAuthProvider();
-window.loginGoogle = () => {
-  signInWithRedirect(auth, provider);
-};
-getRedirectResult(auth).then((result) => {
-  if (result?.user) {
-    verificarAcesso(result.user.email);
-  }
-});
-
 // === LOGOUT ===
 window.logout = () => {
   signOut(auth);
@@ -113,14 +92,12 @@ onAuthStateChanged(auth, (user) => {
 
 // === VERIFICAR ACESSO ===
 async function verificarAcesso(email) {
-  // 👑 Admin
-  if (email === "dionegalato1212@gmail.com") { // seu email admin
+  if (email === "dionegalato1212@gmail.com") { // admin
     carregarAssinaturas();
     showAdmin();
     return;
   }
 
-  // Usuário comum
   const q = query(collection(db, "assinaturas"), where("email", "==", email));
   const snap = await getDocs(q);
 
@@ -142,7 +119,7 @@ async function verificarAcesso(email) {
   }
 }
 
-// === ADMIN: LISTAR ASSINATURAS ===
+// === ADMIN: LISTAR E ATUALIZAR ===
 async function carregarAssinaturas() {
   const assinaturasRef = collection(db, "assinaturas");
   const snapshot = await getDocs(assinaturasRef);
@@ -168,10 +145,9 @@ async function carregarAssinaturas() {
   });
 }
 
-// === ADMIN: ATUALIZAR STATUS ===
 window.atualizarStatus = async function (id, novoStatus) {
   const validadeNova = new Date();
-  validadeNova.setDate(validadeNova.getDate() + 30); // admin define +30 dias
+  validadeNova.setDate(validadeNova.getDate() + 30);
   const ref = doc(db, "assinaturas", id);
 
   await updateDoc(ref, { 
@@ -183,7 +159,7 @@ window.atualizarStatus = async function (id, novoStatus) {
   carregarAssinaturas();
 };
 
-// === DASHBOARD: CALLS ===
+// === CALLS ===
 function carregarCalls() {
   const q = query(collection(db, "calls"), orderBy("hora", "desc"), limit(10));
   onSnapshot(q, (snapshot) => {
@@ -212,13 +188,11 @@ function showDashboard() {
   adminPanel.classList.add("hidden");
   dashboard.classList.remove("hidden");
 }
-
 function showAdmin() {
   loginScreen.classList.add("hidden");
   dashboard.classList.add("hidden");
   adminPanel.classList.remove("hidden");
 }
-
 function showLogin() {
   dashboard.classList.add("hidden");
   adminPanel.classList.add("hidden");
