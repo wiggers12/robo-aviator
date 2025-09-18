@@ -3,81 +3,121 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Robô Aviator Premium</title>
-  <link rel="stylesheet" href="style.css">
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#111">
-  <!-- Ícone -->
-  <link rel="icon" href="icon.png" type="image/png">
+  <title>Robô Criador de Dashboards</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+    }
+    .upload-area {
+      text-align: center;
+      margin: 20px 0;
+    }
+    canvas {
+      margin: 20px auto;
+      display: block;
+      max-width: 700px;
+    }
+    #kpis {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .kpi {
+      background: white;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      min-width: 120px;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-  <!-- Login -->
-<div id="login" class="screen">
-  <h1>🚀 Robô Aviator Premium</h1>
-  <p>Assine para ver as calls em tempo real</p>
+  <h1>📊 Robô Criador de Dashboards</h1>
 
-  <!-- Botão para pagar assinatura -->
-  <a href="https://mpago.la/27kUsuM" target="_blank" class="btn-assinar">
-    💳 Assinar Agora
-  </a>
-
-  <h3>Entrar com Email e Senha</h3>
-  <input type="email" id="email" placeholder="Digite seu email">
-  <input type="password" id="senha" placeholder="Digite sua senha">
-  <button onclick="loginEmail()">Entrar com Email</button>
-  <button onclick="cadastroEmail()">Cadastrar</button>
-</div>
-
-  <!-- Dashboard -->
-  <div id="dashboard" class="screen hidden">
-    <header>
-      <h2>📊 Dashboard de Calls</h2>
-      <button onclick="logout()">Sair</button>
-    </header>
-
-    <section id="calls">
-      <h3>📢 Últimas Calls</h3>
-      <ul id="callList"></ul>
-    </section>
-
-    <section id="historico">
-      <h3>📈 Histórico</h3>
-      <p id="stats">Taxa de acerto: --%</p>
-    </section>
-
-    <!-- Botão do jogo -->
-    <section id="jogo">
-      <h3>🎮 Diversão Garantida</h3>
-      <a href="https://goathbet.com/?r=zktgmbwl" target="_blank" class="btn-jogar">
-        🎮 Jogue Aqui
-      </a>
-    </section>
+  <div class="upload-area">
+    <input type="file" id="fileInput" accept=".csv">
+    <p>Carregue um arquivo CSV com dados (ex: Produto, Valor)</p>
   </div>
 
-  <!-- Área de Admin -->
-  <div id="admin" class="screen hidden">
-    <header>
-      <h2>👑 Painel de Administração</h2>
-      <button onclick="logout()">Sair</button>
-    </header>
+  <div id="kpis"></div>
 
-    <section>
-      <h3>Gerenciar Assinaturas</h3>
-      <table border="1" width="100%">
-        <thead>
-          <tr>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Validade</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-        <tbody id="assinaturasTable"></tbody>
-      </table>
-    </section>
-  </div>
+  <canvas id="chart"></canvas>
 
-  <!-- Scripts -->
-  <script type="module" src="app.js"></script>
+  <script>
+    let chartInstance;
+
+    document.getElementById("fileInput").addEventListener("change", function(e) {
+      const file = e.target.files[0];
+      if (file) {
+        Papa.parse(file, {
+          header: true,
+          dynamicTyping: true,
+          complete: function(results) {
+            const data = results.data;
+            gerarDashboard(data);
+          }
+        });
+      }
+    });
+
+    function gerarDashboard(data) {
+      // Pega as duas primeiras colunas do CSV
+      const labels = data.map(row => row[Object.keys(row)[0]]);
+      const values = data.map(row => row[Object.keys(row)[1]]);
+
+      // KPIs básicos
+      const total = values.reduce((a,b) => a+b, 0);
+      const media = (total / values.length).toFixed(2);
+      const maior = Math.max(...values);
+      const menor = Math.min(...values);
+
+      document.getElementById("kpis").innerHTML = `
+        <div class="kpi"><strong>Total</strong><br> ${total}</div>
+        <div class="kpi"><strong>Média</strong><br> ${media}</div>
+        <div class="kpi"><strong>Maior</strong><br> ${maior}</div>
+        <div class="kpi"><strong>Menor</strong><br> ${menor}</div>
+      `;
+
+      // Destroi gráfico antigo se existir
+      if (chartInstance) {
+        chartInstance.destroy();
+      }
+
+      // Cria gráfico
+      const ctx = document.getElementById("chart").getContext("2d");
+      chartInstance = new Chart(ctx, {
+        type: "bar",
+        data: {
+          labels: labels,
+          datasets: [{
+            label: "Valores",
+            data: values,
+            backgroundColor: "rgba(54, 162, 235, 0.6)",
+            borderColor: "rgba(54, 162, 235, 1)",
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: false }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+  </script>
 </body>
 </html>
